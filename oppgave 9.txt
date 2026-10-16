@@ -1,0 +1,302 @@
+import React, { useState } from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  Image,
+  FlatList,
+  TouchableOpacity,
+  Modal,
+  SafeAreaView,
+  TextInput,
+  StatusBar
+} from 'react-native';
+
+const CATEGORIES = ['Alle', 'Hund', 'Katt', 'Fisk', 'Fugl', 'Smådyr'];
+
+const PRODUCTS = [
+  { id: '1', cat: 'Hund', name: 'Premium Hundefôr 10kg', price: 699, rating: '4.9', img: 'https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=500&q=80' },
+  { id: '2', cat: 'Hund', name: 'Komfortabel Hundeseng', price: 499, rating: '4.8', img: 'https://images.unsplash.com/photo-1541599540903-216a46ca1dc0?w=500&q=80' },
+  { id: '3', cat: 'Katt', name: 'Klatretre med Klorestativ', price: 899, rating: '5.0', img: 'https://images.unsplash.com/photo-1545249390-6bdfa286032f?w=500&q=80' },
+  { id: '4', cat: 'Katt', name: 'Interaktiv Katteleke', price: 199, rating: '4.6', img: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=500&q=80' },
+  { id: '5', cat: 'Fisk', name: 'Akvarium Sett 60L', price: 1290, rating: '4.7', img: 'https://images.unsplash.com/photo-1520301255226-bf5f144451c1?w=500&q=80' },
+  { id: '6', cat: 'Fugl', name: 'Stort Fuglebur', price: 750, rating: '4.5', img: 'https://images.unsplash.com/photo-1552728089-57bdde30beb3?w=500&q=80' },
+  { id: '7', cat: 'Smådyr', name: 'Kanin- og Marsvinbur', price: 650, rating: '4.8', img: 'https://images.unsplash.com/photo-1585110396000-c9ffd4e4b308?w=500&q=80' },
+];
+
+export default function App() {
+  const [activeTab, setActiveTab] = useState('shop');
+  const [selectedCat, setSelectedCat] = useState('Alle');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [cart, setCart] = useState([]);
+  const [selectedImg, setSelectedImg] = useState(null);
+
+  const addToCart = (item) => {
+    let exists = false;
+    let newCart = [];
+
+    for (let i = 0; i < cart.length; i++) {
+      if (cart[i].id === item.id) {
+        exists = true;
+        newCart.push({ ...cart[i], qty: cart[i].qty + 1 });
+      } else {
+        newCart.push(cart[i]);
+      }
+    }
+
+    if (!exists) {
+      newCart.push({ ...item, qty: 1 });
+    }
+
+    setCart(newCart);
+  };
+
+  const updateQty = (id, delta) => {
+    let newCart = [];
+    for (let i = 0; i < cart.length; i++) {
+      if (cart[i].id === id) {
+        let newQty = cart[i].qty + delta;
+        if (newQty > 0) {
+          newCart.push({ ...cart[i], qty: newQty });
+        }
+      } else {
+        newCart.push(cart[i]);
+      }
+    }
+    setCart(newCart);
+  };
+
+  let totalPrice = 0;
+  let totalItems = 0;
+  for (let i = 0; i < cart.length; i++) {
+    totalPrice += cart[i].price * cart[i].qty;
+    totalItems += cart[i].qty;
+  }
+
+  let filteredProducts = [];
+  for (let i = 0; i < PRODUCTS.length; i++) {
+    let p = PRODUCTS[i];
+    let matchesCat = selectedCat === 'Alle' || p.cat === selectedCat;
+    let matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+
+    if (matchesCat && matchesSearch) {
+      filteredProducts.push(p);
+    }
+  }
+
+  return (
+    <SafeAreaView style={s.container}>
+      <StatusBar barStyle="light-content" />
+
+      {/* Header */}
+      <View style={s.header}>
+        <Text style={s.logoText}>PetParadise 🐾</Text>
+      </View>
+
+      {/* Tab Navigation */}
+      <View style={s.tabBar}>
+        <TouchableOpacity
+          style={[s.tabBtn, activeTab === 'shop' && s.activeTabBtn]}
+          onPress={() => setActiveTab('shop')}
+        >
+          <Text style={s.tabTxt}>Butikk</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[s.tabBtn, activeTab === 'cart' && s.activeTabBtn]}
+          onPress={() => setActiveTab('cart')}
+        >
+          <Text style={s.tabTxt}>Handlekurv ({totalItems})</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* SHOP VIEW */}
+      {activeTab === 'shop' && (
+        <View style={{ flex: 1 }}>
+          {/* Søkefelt */}
+          <TextInput
+            style={s.searchInput}
+            placeholder="Søk etter utstyr, fôr..."
+            placeholderTextColor="#64748b"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+
+          {/* Kategorifilter */}
+          <View style={{ height: 45, marginBottom: 15 }}>
+            <FlatList
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              data={CATEGORIES}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[s.catChip, selectedCat === item && s.activeCatChip]}
+                  onPress={() => setSelectedCat(item)}
+                >
+                  <Text style={[s.catChipTxt, selectedCat === item && s.activeCatChipTxt]}>
+                    {item}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+
+          {/* Produktliste */}
+          <FlatList
+            data={filteredProducts}
+            keyExtractor={(item) => item.id}
+            showsVerticalScrollIndicator={false}
+            renderItem={({ item }) => (
+              <View style={s.productCard}>
+                <TouchableOpacity onPress={() => setSelectedImg(item.img)}>
+                  <Image source={{ uri: item.img }} style={s.productImg} />
+                </TouchableOpacity>
+
+                <View style={s.productInfo}>
+                  <Text style={s.catBadge}>{item.cat}</Text>
+                  <Text style={s.productTitle}>{item.name}</Text>
+                  <Text style={s.ratingTxt}>★ {item.rating}</Text>
+
+                  <View style={s.cardBottom}>
+                    <Text style={s.priceTxt}>{item.price} NOK</Text>
+                    <TouchableOpacity
+                      style={s.buyBtn}
+                      onPress={() => addToCart(item)}
+                    >
+                      <Text style={s.buyBtnTxt}>+ Kjøp</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            )}
+          />
+        </View>
+      )}
+
+      {/* CART VIEW */}
+      {activeTab === 'cart' && (
+        <View style={{ flex: 1 }}>
+          <Text style={s.sectionHeader}>Din Handlekurv</Text>
+
+          {cart.length === 0 ? (
+            <View style={s.emptyCart}>
+              <Text style={s.emptyTxt}>Handlekurven er tom 🛒</Text>
+            </View>
+          ) : (
+            <FlatList
+              data={cart}
+              keyExtractor={(item) => item.id}
+              showsVerticalScrollIndicator={false}
+              renderItem={({ item }) => (
+                <View style={s.cartCard}>
+                  <Image source={{ uri: item.img }} style={s.cartImg} />
+                  <View style={s.cartDetails}>
+                    <Text style={s.cartTitle}>{item.name}</Text>
+                    <Text style={s.cartPrice}>{item.price * item.qty} NOK</Text>
+                    
+                    <View style={s.qtyControls}>
+                      <TouchableOpacity
+                        style={s.qtyBtn}
+                        onPress={() => updateQty(item.id, -1)}
+                      >
+                        <Text style={s.qtyBtnTxt}>-</Text>
+                      </TouchableOpacity>
+
+                      <Text style={s.qtyTxt}>{item.qty}</Text>
+
+                      <TouchableOpacity
+                        style={s.qtyBtn}
+                        onPress={() => updateQty(item.id, 1)}
+                      >
+                        <Text style={s.qtyBtnTxt}>+</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+              )}
+            />
+          )}
+
+          {cart.length > 0 && (
+            <View style={s.checkoutBox}>
+              <View style={s.totalRow}>
+                <Text style={s.totalTitle}>Totalpris:</Text>
+                <Text style={s.totalValue}>{totalPrice} NOK</Text>
+              </View>
+              <TouchableOpacity
+                style={s.checkoutBtn}
+                onPress={() => alert('Takk for din bestilling!')}
+              >
+                <Text style={s.checkoutTxt}>Gå til kassen</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      )}
+
+      {/* Bildevisning (Modal) */}
+      <Modal
+        visible={selectedImg !== null}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setSelectedImg(null)}
+      >
+        <TouchableOpacity
+          style={s.modalBackground}
+          activeOpacity={1}
+          onPress={() => setSelectedImg(null)}
+        >
+          {selectedImg && (
+            <Image source={{ uri: selectedImg }} style={s.previewImg} />
+          )}
+        </TouchableOpacity>
+      </Modal>
+    </SafeAreaView>
+  );
+}
+
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#0f172a', paddingHorizontal: 16, paddingTop: 10 },
+  header: { alignItems: 'center', marginVertical: 10 },
+  logoText: { fontSize: 26, fontWeight: '900', color: '#38bdf8', letterSpacing: 1 },
+  tabBar: { flexDirection: 'row', backgroundColor: '#1e293b', padding: 4, borderRadius: 12, marginBottom: 15 },
+  tabBtn: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 8 },
+  activeTabBtn: { backgroundColor: '#0284c7' },
+  tabTxt: { color: '#ffffff', fontWeight: '700', fontSize: 14 },
+  searchInput: { backgroundColor: '#1e293b', color: '#ffffff', padding: 12, borderRadius: 10, marginBottom: 12, fontSize: 15 },
+  catChip: { backgroundColor: '#1e293b', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, marginRight: 8, justifyContent: 'center' },
+  activeCatChip: { backgroundColor: '#38bdf8' },
+  catChipTxt: { color: '#94a3b8', fontWeight: '600' },
+  activeCatChipTxt: { color: '#0f172a', fontWeight: '800' },
+  productCard: { flexDirection: 'row', backgroundColor: '#1e293b', borderRadius: 16, padding: 12, marginBottom: 12, alignItems: 'center' },
+  productImg: { width: 90, height: 90, borderRadius: 12 },
+  productInfo: { flex: 1, marginLeft: 12 },
+  catBadge: { fontSize: 11, color: '#38bdf8', fontWeight: '700', textTransform: 'uppercase' },
+  productTitle: { fontSize: 16, fontWeight: '700', color: '#ffffff', marginTop: 2 },
+  ratingTxt: { fontSize: 12, color: '#f59e0b', marginTop: 2 },
+  cardBottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
+  priceTxt: { fontSize: 16, fontWeight: '800', color: '#4ade80' },
+  buyBtn: { backgroundColor: '#0284c7', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8 },
+  buyBtnTxt: { color: '#ffffff', fontWeight: '700', fontSize: 13 },
+  sectionHeader: { fontSize: 22, fontWeight: '800', color: '#ffffff', marginBottom: 15 },
+  emptyCart: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  emptyTxt: { color: '#64748b', fontSize: 16 },
+  cartCard: { flexDirection: 'row', backgroundColor: '#1e293b', borderRadius: 14, padding: 12, marginBottom: 10, alignItems: 'center' },
+  cartImg: { width: 70, height: 70, borderRadius: 10 },
+  cartDetails: { flex: 1, marginLeft: 12 },
+  cartTitle: { color: '#ffffff', fontWeight: '700', fontSize: 15 },
+  cartPrice: { color: '#4ade80', fontWeight: '800', marginTop: 4 },
+  qtyControls: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
+  qtyBtn: { backgroundColor: '#334155', width: 28, height: 28, borderRadius: 6, justifyContent: 'center', alignItems: 'center' },
+  qtyBtnTxt: { color: '#ffffff', fontWeight: '800', fontSize: 16 },
+  qtyTxt: { color: '#ffffff', fontWeight: '700', marginHorizontal: 12 },
+  checkoutBox: { backgroundColor: '#1e293b', padding: 16, borderRadius: 16, marginTop: 10, marginBottom: 10 },
+  totalRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
+  totalTitle: { color: '#94a3b8', fontSize: 16, fontWeight: '600' },
+  totalValue: { color: '#4ade80', fontSize: 20, fontWeight: '800' },
+  checkoutBtn: { backgroundColor: '#22c55e', paddingVertical: 14, borderRadius: 10, alignItems: 'center' },
+  checkoutTxt: { color: '#ffffff', fontWeight: '800', fontSize: 16 },
+  modalBackground: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' },
+  previewImg: { width: 320, height: 320, borderRadius: 16 },
+});

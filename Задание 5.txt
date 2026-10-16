@@ -1,0 +1,91 @@
+Задание 5
+
+import { useState } from 'react';
+import { View, Text, TextInput, StyleSheet } from 'react-native';
+
+type Weather = {
+  city: string;
+  temp: number;
+  description: string;
+};
+
+function describe(code: number): string {
+  if (code === 0) return 'Klarvær';
+  if (code <= 3) return 'Skyet';
+  if (code === 45 || code === 48) return 'Tåke';
+  if (code >= 51 && code <= 67) return 'Regn';
+  if (code >= 71 && code <= 77) return 'Snø';
+  if (code >= 80 && code <= 82) return 'Regnbyger';
+  if (code >= 95) return 'Tordenvær';
+  return 'Ukjent';
+}
+
+export default function Index() {
+  const [query, setQuery] = useState('');
+  const [weather, setWeather] = useState<Weather | null>(null);
+  const [error, setError] = useState('');
+
+  async function search() {
+    try {
+      setError('');
+      const geoRes = await fetch(
+        `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1`
+      );
+      const geo = await geoRes.json();
+      if (!geo.results || geo.results.length === 0) {
+        setError('Fant ikke stedet');
+        return;
+      }
+      const place = geo.results[0];
+
+      const wRes = await fetch(
+        `https://api.open-meteo.com/v1/forecast?latitude=${place.latitude}&longitude=${place.longitude}&current=temperature_2m,weather_code`
+      );
+      const w = await wRes.json();
+
+      setWeather({
+        city: place.name,
+        temp: w.current.temperature_2m,
+        description: describe(w.current.weather_code),
+      });
+    } catch (e) {
+      setError('Noe gikk galt');
+    }
+  }
+
+  return (
+    <View style={styles.container}>
+      {weather && (
+        <View style={styles.result}>
+          <Text style={styles.city}>{weather.city}</Text>
+          <Text style={styles.description}>{weather.description}</Text>
+          <Text style={[styles.temp, weather.temp < 0 && styles.cold]}>
+            {Math.round(weather.temp)}°
+          </Text>
+        </View>
+      )}
+
+      {error !== '' && <Text style={styles.error}>{error}</Text>}
+
+      <TextInput
+        style={styles.input}
+        placeholder="Search any city"
+        placeholderTextColor="#ccc"
+        value={query}
+        onChangeText={setQuery}
+        onSubmitEditing={search}
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#3a4a5a', justifyContent: 'center', padding: 30 },
+  result: { alignItems: 'center', marginBottom: 30 },
+  city: { color: 'white', fontSize: 40 },
+  description: { color: 'white', fontSize: 18, marginTop: 5 },
+  temp: { color: 'white', fontSize: 50, marginTop: 10 },
+  cold: { color: 'red' },
+  error: { color: '#ffb3b3', textAlign: 'center', marginBottom: 15 },
+  input: { backgroundColor: 'rgba(255,255,255,0.2)', color: 'white', padding: 12, borderRadius: 5 },
+});

@@ -1,0 +1,52 @@
+Задание 4
+
+import { useState } from "react";
+import { Button, StyleSheet, Text, View } from "react-native";
+
+export default function Index() {
+  const [teller, setTeller] = useState(0);
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.button}>
+        <Button
+          title="Øk teller"
+          color="#487281"
+          onPress={() => setTeller(teller + 1)}
+        />
+      </View>
+      <View style={styles.button}>
+        <Button
+          title="Reduser teller"
+          color="#487281"
+          onPress={() => setTeller(Math.max(0, teller - 1))}
+        />
+      </View>
+
+      <Text style={styles.label}>Teller er:</Text>
+      <View style={styles.box}>
+        <Text style={styles.number}>{teller}</Text>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "white",
+    alignItems: "center",
+    paddingTop: 100,
+  },
+  button: { width: 220, marginBottom: 15 },
+  label: { fontWeight: "bold", fontSize: 18, marginTop: 50 },
+  box: {
+    backgroundColor: "#D8DBE2",
+    width: 120,
+    height: 110,
+    marginTop: 10,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  number: { fontWeight: "bold", fontSize: 40 },
+});

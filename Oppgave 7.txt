@@ -1,0 +1,196 @@
+
+import React, { useState, useEffect } from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  TextInput,
+  TouchableOpacity,
+  Switch
+  SafeAreaView
+} from 'react-native';
+
+export default function App() {
+  const [password, setPassword] = useState('');
+  const [length, setLength] = useState('12');
+  const [includeSymbols, setIncludeSymbols] = useState(true);
+  const [minSymbols, setMinSymbols] = useState('2');
+
+  const specialChars = '!@#$%^&*()_+-=[]{}|;:,.<>?';
+  const lettersAndDigits = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+
+  // Функция подсчета спецсимволов в строке
+  const countSymbols = (str) => {
+    let count = 0;
+    for (let char of str) {
+      if (specialChars.includes(char)) {
+        count++;
+      }
+    }
+    return count;
+  };
+
+  // Генерация нового пароля с учетом минимального количества спецсимволов
+  const generatePassword = () => {
+    const passLength = parseInt(length) || 8;
+    const requiredSymbols = includeSymbols ? (parseInt(minSymbols) || 0) : 0;
+
+    let result = '';
+    
+    // Если требуется больше спецсимволов, чем длина пароля
+    if (requiredSymbols > passLength) {
+      setPassword('Длина слишком мала!');
+      return;
+    }
+
+    // 1. Гарантированно добавляем нужное количество спецсимволов
+    if (includeSymbols && requiredSymbols > 0) {
+      for (let i = 0; i < requiredSymbols; i++) {
+        const randIndex = Math.floor(Math.random() * specialChars.length);
+        result += specialChars[randIndex];
+      }
+    }
+
+    // 2. Заполняем остаток пароля
+    const availableChars = includeSymbols 
+      ? lettersAndDigits + specialChars 
+      : lettersAndDigits;
+
+    const remainingLength = passLength - result.length;
+    for (let i = 0; i < remainingLength; i++) {
+      const randIndex = Math.floor(Math.random() * availableChars.length);
+      result += availableChars[randIndex];
+    }
+
+    // 3. Перемешиваем символы, чтобы спецсимволы не стояли только в начале
+    const shuffled = result.split('').sort(() => 0.5 - Math.random()).join('');
+    setPassword(shuffled);
+  };
+
+  // Проверка существующего пароля при изменении условий
+  useEffect(() => {
+    if (!password) {
+      generatePassword();
+      return;
+    }
+
+    const currentSymbolCount = countSymbols(password);
+    const requiredSymbols = includeSymbols ? (parseInt(minSymbols) || 0) : 0;
+
+    // Если условия не выполняются (длина или спецсимволы) — генерируем новый
+    if (password.length !== parseInt(length) || currentSymbolCount < requiredSymbols) {
+      generatePassword();
+    }
+  }, [minSymbols, includeSymbols, length]);
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.card}>
+        <Text style={styles.title}>Password Generator</Text>
+        
+        <View style={styles.passwordContainer}>
+          <Text style={styles.passwordText}>{password}</Text>
+        </View>
+
+        <View style={styles.optionRow}>
+          <Text style={styles.label}>Длина пароля:</Text>
+          <TextInput
+            style={styles.input}
+            keyboardType="numeric"
+            value={length}
+            onChangeText={setLength}
+          />
+        </View>
+
+        <View style={styles.optionRow}>
+          <Text style={styles.label}>Специальные символы:</Text>
+          <Switch
+            value={includeSymbols}
+            onValueChange={setIncludeSymbols}
+          />
+        </View>
+
+        {/* Поле для ввода минимального количества спецсимволов */}
+        {includeSymbols && (
+          <View style={styles.optionRow}>
+            <Text style={styles.label}>Мин. спецсимволов:</Text>
+            <TextInput
+              style={styles.input}
+              keyboardType="numeric"
+              value={minSymbols}
+              onChangeText={setMinSymbols}
+            />
+          </View>
+        )}
+
+        <TouchableOpacity style={styles.button} onPress={generatePassword}>
+          <Text style={styles.buttonText}>Сгенерировать новый</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f4f4f9',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  card: {
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 20,
+    elevation: 4,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  passwordContainer: {
+    backgroundColor: '#eef2f5',
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  passwordText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+  },
+  optionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  label: {
+    fontSize: 16,
+    color: '#555',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 6,
+    width: 60,
+    height: 40,
+    textAlign: 'center',
+    fontSize: 16,
+  },
+  button: {
+    backgroundColor: '#007bff',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+});

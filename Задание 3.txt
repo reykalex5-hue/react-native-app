@@ -1,0 +1,55 @@
+Задание 3
+
+import { useState } from "react";
+import { StyleSheet, Text, TextInput, View } from "react-native";
+
+export default function Index() {
+  const [password, setPassword] = useState("");
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerText}>Passord</Text>
+      </View>
+
+      <View style={styles.content}>
+        <Text style={styles.label}>Skriv inn passordet ditt:</Text>
+        <TextInput
+          style={styles.input}
+          value={password}
+          onChangeText={setPassword}
+        />
+
+        <Text style={[styles.label, { marginTop: 30 }]}>
+          Passordet ditt er: {password}
+        </Text>
+
+        {password.length < 5 && (
+          <Text style={[styles.label, { marginTop: 80 }]}>
+            Passordet må minst ha 5 tegn
+          </Text>
+        )}
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "white" },
+  header: {
+    backgroundColor: "#373F51",
+    paddingTop: 40,
+    paddingBottom: 30,
+    alignItems: "center",
+  },
+  headerText: { color: "white", fontWeight: "bold", fontSize: 18 },
+  content: { padding: 25 },
+  label: { fontWeight: "bold", fontSize: 16 },
+  input: {
+    borderWidth: 1,
+    borderColor: "gray",
+    height: 40,
+    marginTop: 5,
+    paddingHorizontal: 10,
+  },
+});
